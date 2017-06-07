@@ -23,18 +23,18 @@ import org.springframework.data.redis.core.RedisTemplate;
  */
 public class CustomRedisSessionDao extends AbstractSessionDAO {
 
+    /**
+     * redis session key 前缀
+     */
+    private String sessionKeyPrefix;
+
     @Resource
-    private RedisTemplate<String, Session> redisTemplate;
+    private RedisTemplate<String, Session> redisTemplateZero;
 
     /**
      * log4j
      */
     private static final Logger logger = Logger.getLogger(CustomRedisSessionDao.class);
-
-    /**
-     * redis session key 前缀
-     */
-    private final String REDIS_SHIRO_SESSION = "shiro-session-";
 
     @Override
     public void update(Session session) throws UnknownSessionException {
@@ -42,7 +42,7 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
             logger.info("session or sessionId is null");
         }
 
-        redisTemplate.opsForValue().set(this.REDIS_SHIRO_SESSION + session.getId(), session, session.getTimeout(), TimeUnit.MILLISECONDS);
+        redisTemplateZero.opsForValue().set(this.sessionKeyPrefix + session.getId(), session, session.getTimeout(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -50,15 +50,15 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
         if (session == null || session.getId() == null) {
             logger.info("session or sessionId is null");
         }
-        redisTemplate.delete(this.REDIS_SHIRO_SESSION + session.getId());
+        redisTemplateZero.delete(this.sessionKeyPrefix + session.getId());
     }
 
     @Override
     public Collection<Session> getActiveSessions() {
-        Set<String> keys = redisTemplate.keys(this.REDIS_SHIRO_SESSION + "*");
+        Set<String> keys = redisTemplateZero.keys(this.sessionKeyPrefix + "*");
         Set<Session> sessions = new HashSet<Session>();
         for (String key : keys) {
-            Session session = redisTemplate.opsForValue().get(key);
+            Session session = redisTemplateZero.opsForValue().get(key);
             sessions.add(session);
         }
         return sessions;
@@ -80,8 +80,16 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
             logger.info("session or sessionId is null");
             return null;
         }
-        Session session = redisTemplate.opsForValue().get(this.REDIS_SHIRO_SESSION + sessionId);
+        Session session = redisTemplateZero.opsForValue().get(this.sessionKeyPrefix + sessionId);
         return session;
     }
 
+    /**
+     * 需要spring注入，所以public访问权限
+     * 
+     * @param sessionKeyPrefix
+     */
+    public void setSessionKeyPrefix(String sessionKeyPrefix) {
+        this.sessionKeyPrefix = sessionKeyPrefix;
+    }
 }
