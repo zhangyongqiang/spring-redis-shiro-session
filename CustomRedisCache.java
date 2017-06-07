@@ -23,14 +23,9 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
     private RedisTemplate<String, V> redisTemplate;
 
     /**
-     * redis key的前缀
+     * 拼接上authorizationCache包名后的redis cache key的前缀
      */
-    public static final String KEY_PREFIX = "shiro-cache-";
-
-    /**
-     * shiro 缓存前缀
-     */
-    private String REDIS_SHIRO_CACHE;
+    private final String cacheKeyPrefix;
 
     /**
      * doGetAuthorizationInfo 的过期时间, 10分钟。
@@ -38,10 +33,12 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
     private long expire = 600000L;
 
     /**
+     * 同一包中的类可以访问
+     * 
      * @param name
      */
-    public CustomRedisCache(String name) {
-        REDIS_SHIRO_CACHE = KEY_PREFIX + name + ":";
+    protected CustomRedisCache(String name) {
+        cacheKeyPrefix = name;
     }
 
     @Override
@@ -51,7 +48,7 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
             redisTemplate = Springfactory.getBean("redisTemplate");
         }
 
-        return redisTemplate.opsForValue().get(this.REDIS_SHIRO_CACHE + key);
+        return redisTemplate.opsForValue().get(this.cacheKeyPrefix + key);
     }
 
     @Override
@@ -61,7 +58,7 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
         }
 
         V previos = get(key);
-        redisTemplate.opsForValue().set(this.REDIS_SHIRO_CACHE + key, value, this.expire, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(this.cacheKeyPrefix + key, value, this.expire, TimeUnit.MILLISECONDS);
         return previos;
     }
 
@@ -72,7 +69,7 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
         }
 
         V previos = get(key);
-        redisTemplate.delete(this.REDIS_SHIRO_CACHE + key);
+        redisTemplate.delete(this.cacheKeyPrefix + key);
         return previos;
     }
 
@@ -83,7 +80,7 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
         }
 
         // 这里不用connection.flushDb(), 以免Session等其他缓存数据被连带删除
-        Set<String> redisKeys = redisTemplate.keys(this.REDIS_SHIRO_CACHE + "*");
+        Set<String> redisKeys = redisTemplate.keys(this.cacheKeyPrefix + "*");
         for (String redisKey : redisKeys) {
             redisTemplate.delete(redisKey);
         }
@@ -103,10 +100,10 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
             redisTemplate = Springfactory.getBean("redisTemplate");
         }
 
-        Set<String> redisKeys = redisTemplate.keys(this.REDIS_SHIRO_CACHE + "*");
+        Set<String> redisKeys = redisTemplate.keys(this.cacheKeyPrefix + "*");
         Set<K> keys = new HashSet<K>();
         for (String redisKey : redisKeys) {
-            keys.add((K) redisKey.substring(this.REDIS_SHIRO_CACHE.length()));
+            keys.add((K) redisKey.substring(this.cacheKeyPrefix.length()));
         }
         return keys;
     }
@@ -117,7 +114,7 @@ public class CustomRedisCache<K, V> implements Cache<K, V> {
             redisTemplate = Springfactory.getBean("redisTemplate");
         }
 
-        Set<String> redisKeys = redisTemplate.keys(this.REDIS_SHIRO_CACHE + "*");
+        Set<String> redisKeys = redisTemplate.keys(this.cacheKeyPrefix + "*");
         Set<V> values = new HashSet<V>();
         for (String redisKey : redisKeys) {
             V value = redisTemplate.opsForValue().get(redisKey);
