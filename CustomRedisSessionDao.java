@@ -29,7 +29,7 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
     private String sessionKeyPrefix;
 
     @Resource
-    private RedisTemplate<String, Session> redisTemplateZero;
+    private RedisTemplate<String, Session> redisTemplate;
 
     /**
      * log4j
@@ -41,8 +41,7 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
         if (session == null || session.getId() == null) {
             logger.info("session or sessionId is null");
         }
-
-        redisTemplateZero.opsForValue().set(this.sessionKeyPrefix + session.getId(), session, session.getTimeout(), TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(this.sessionKeyPrefix + session.getId(), session, session.getTimeout(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -50,15 +49,15 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
         if (session == null || session.getId() == null) {
             logger.info("session or sessionId is null");
         }
-        redisTemplateZero.delete(this.sessionKeyPrefix + session.getId());
+        redisTemplate.delete(this.sessionKeyPrefix + session.getId());
     }
 
     @Override
     public Collection<Session> getActiveSessions() {
-        Set<String> keys = redisTemplateZero.keys(this.sessionKeyPrefix + "*");
+        Set<String> keys = redisTemplate.keys(this.sessionKeyPrefix + "*");
         Set<Session> sessions = new HashSet<Session>();
         for (String key : keys) {
-            Session session = redisTemplateZero.opsForValue().get(key);
+            Session session = redisTemplate.opsForValue().get(key);
             sessions.add(session);
         }
         return sessions;
@@ -80,7 +79,7 @@ public class CustomRedisSessionDao extends AbstractSessionDAO {
             logger.info("session or sessionId is null");
             return null;
         }
-        Session session = redisTemplateZero.opsForValue().get(this.sessionKeyPrefix + sessionId);
+        Session session = redisTemplate.opsForValue().get(this.sessionKeyPrefix + sessionId);
         return session;
     }
 
