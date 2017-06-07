@@ -20,10 +20,14 @@
         <property name="httpOnly" value="true"/>
         <property name="maxAge" value="108000"/>
     </bean> 
-    
+   
     <!-- 基于Redis -->
-    <bean id="customRedisSessionDao" class="com.hqpe.itm.realm.CustomRedisSessionDao"/>
-    <bean id="customRedisCacheManager" class="com.hqpe.itm.realm.CustomRedisCacheManager"/>
+    <bean id="customRedisSessionDao" class="com.hqpe.itm.realm.CustomRedisSessionDao">
+        <property name="sessionKeyPrefix" value="web-session-"/>
+    </bean>
+    <bean id="customRedisCacheManager" class="com.hqpe.itm.realm.CustomRedisCacheManager">
+        <property name="cacheKeyPrefix" value="web-cache-"/>    
+    </bean>
 
     <!-- 会话验证调度器 -->
     <bean id="sessionValidationScheduler" class="org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
