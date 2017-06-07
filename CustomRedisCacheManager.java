@@ -20,13 +20,18 @@ import org.springframework.data.redis.core.RedisTemplate;
  */
 public class CustomRedisCacheManager implements CacheManager, Destroyable {
 
+    /**
+     * redis cache key的前缀
+     */
+    private String cacheKeyPrefix;
+
     @Resource
     private RedisTemplate<String, Session> redisTemplate;
 
     @Override
     public void destroy() throws Exception {
         // 这里不用connection.flushDb(), 以免Session等其他缓存数据被连带删除
-        Set<String> redisKeys = redisTemplate.keys(CustomRedisCache.KEY_PREFIX + "*");
+        Set<String> redisKeys = redisTemplate.keys(this.cacheKeyPrefix + "*");
         for (String redisKey : redisKeys) {
             redisTemplate.delete(redisKey);
         }
@@ -34,6 +39,15 @@ public class CustomRedisCacheManager implements CacheManager, Destroyable {
 
     @Override
     public <K, V> Cache<K, V> getCache(String name) throws CacheException {
-        return new CustomRedisCache<K, V>(name);
+        return new CustomRedisCache<K, V>(this.cacheKeyPrefix + name + ":");
+    }
+
+    /**
+     * 需要spring注入，所以public访问权限
+     * 
+     * @param cacheKeyPrefix
+     */
+    public void setCacheKeyPrefix(String cacheKeyPrefix) {
+        this.cacheKeyPrefix = cacheKeyPrefix;
     }
 }
